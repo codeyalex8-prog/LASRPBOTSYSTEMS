@@ -1,0 +1,49 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/50e0970b12c29bb6cecfa11f507327c6.png"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## Session Boost\n\n<@&1555281818935103568> <@&1555281551028125836>\n\nOur **LASRP session is running low on members!** We need more people to join and help bring the session back to life.\n\nIf you're available, please join the session and help boost activity. Feel free to invite friends as well!\n\nLet's get more units on duty and keep the roleplay going.\n\n**Every member counts — we hope to see you there!**"
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}

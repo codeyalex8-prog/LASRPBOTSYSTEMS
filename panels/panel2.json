@@ -1,0 +1,86 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/a7c38f18973b058f7e3631b1630033f4.png"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## <:lasrp:1559999109669191811>┃Los Angeles State Roleplay Server Guide\n\n> Welcome to the **Los Angeles State Roleplay** server guide. This is your main hub for community information. We strive to provide a ***strict, serious, and immersive*** roleplay environment for all members of our community.\n\n> Below, you can find a menu containing **all the important information regarding our community**, including our server regulations, roleplay guidelines, and other essential resources. Please take the time to review the information provided to ensure you have the best possible experience within LASRP."
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 1,
+          "components": [
+            {
+              "type": 3,
+              "custom_id": "guide_menu",
+              "placeholder": "Select a category...",
+              "min_values": 1,
+              "max_values": 1,
+              "options": [
+                {
+                  "label": "Staff Applications",
+                  "value": "staff_applications",
+                  "description": "Information about applying to join our staff team.",
+                  "emoji": { "name": "staffapps", "id": "1555288435269574700" }
+                },
+                {
+                  "label": "Channel Information",
+                  "value": "channel_information",
+                  "description": "An overview of our server channels.",
+                  "emoji": { "name": "channelinfo", "id": "1555288444647899198" }
+                },
+                {
+                  "label": "Appeals",
+                  "value": "appeals",
+                  "description": "How to appeal a punishment.",
+                  "emoji": { "name": "appeals", "id": "1555288482375536640" }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}

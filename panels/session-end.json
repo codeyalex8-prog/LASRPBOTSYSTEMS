@@ -1,0 +1,49 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/027e9cf8af363625bde672dbdbbaefdf.png"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## Session Ended\nThe **Los Angeles State Roleplay session has officially ended.**\n\nThank you to everyone who joined and took part in today's session. We appreciate everyone who helped make it enjoyable and followed the server rules.\n\nPlease make sure all roleplay activities are concluded and units are off duty.\n\nKeep an eye on announcements for information about our next session.\n\n**Thank you for being part of LASRP!**"
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}

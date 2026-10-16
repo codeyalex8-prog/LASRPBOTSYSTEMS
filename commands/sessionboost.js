@@ -1,0 +1,98 @@
+const fs = require('fs');
+const path = require('path');
+const {
+  SlashCommandBuilder,
+  PermissionFlagsBits,
+  MessageFlags,
+} = require('discord.js');
+
+/* ------------------------------------------------------------------ */
+/*  SETTINGS                                                           */
+/* ------------------------------------------------------------------ */
+
+// '' = post in whatever channel the command is used in
+const SESSION_CHANNEL_ID = '';
+
+// Role IDs allowed to use /sessionboost.
+// Leave [] to allow anyone with the "Manage Server" permission instead.
+const ALLOWED_ROLE_IDS = ['1555283780447641620'];
+
+// The panel that gets posted (the pings are inside this file)
+const PANEL_FILE = path.join(__dirname, '..', 'panels', 'session-boost.json');
+
+module.exports = {
+  data: new SlashCommandBuilder()
+    .setName('sessionboost')
+    .setDescription('Ping the session roles to boost a quiet session')
+    .setDMPermission(false),
+
+  async execute(interaction) {
+    const guild = interaction.guild;
+    const member = interaction.member;
+    const isOwner = interaction.user.id === guild.ownerId;
+
+    // ---- who may use this command ----
+    const canUse =
+      isOwner ||
+      (ALLOWED_ROLE_IDS.length
+        ? ALLOWED_ROLE_IDS.some((id) => member.roles.cache.has(id))
+        : member.permissions.has(PermissionFlagsBits.ManageGuild));
+
+    if (!canUse) {
+      return interaction.reply({
+        content: '❌ You don\'t have permission to use this command.',
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    // ---- load the panel ----
+    let json;
+    try {
+      json = JSON.parse(fs.readFileSync(PANEL_FILE, 'utf8'));
+    } catch (err) {
+      return interaction.reply({
+        content: `❌ Couldn't load \`panels/session-boost.json\`: ${err.message}`,
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    // accepts [ ...components ], { components: [...] }, or a single component
+    const components = Array.isArray(json)
+      ? json
+      : json.components
+      ? json.components
+      : [json];
+
+    // ---- pick the channel ----
+    let channel = interaction.channel;
+    let note = '';
+    if (SESSION_CHANNEL_ID) {
+      try {
+        channel = await guild.channels.fetch(SESSION_CHANNEL_ID);
+      } catch {
+        note = '\n⚠️ I couldn\'t find that channel, so I posted it here instead.';
+      }
+    }
+
+    // ---- send it (role pings are allowed) ----
+    try {
+      await channel.send({
+        components,
+        flags: MessageFlags.IsComponentsV2,
+        allowedMentions: { parse: ['roles'] },
+      });
+    } catch (err) {
+      console.error(err);
+      return interaction.reply({
+        content: `❌ I couldn't post the session boost panel: ${err.message}`,
+        flags: MessageFlags.Ephemeral,
+      });
+    }
+
+    // only the person who ran it sees this
+    return interaction.reply({
+      content: `✅ Session boost posted in ${channel}.${note}`,
+      flags: MessageFlags.Ephemeral,
+    });
+  },
+};

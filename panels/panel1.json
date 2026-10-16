@@ -1,0 +1,66 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/260d8cb25367283a7e4261e774416a86.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## <:lasrp:1559999109669191811>┃Los Angeles State Roleplay Rules\n\n> Within this channel, **you’ll find our full community guidelines**, including a detailed explanation of all rules. When roleplaying in our in-game server or communicating within our Discord, **all members are required to follow these guidelines at all times.**\n\n> **Please take the time to read and understand our community guidelines to ensure you have the best possible experience within Los Angeles State Roleplay.** If you have any questions or require assistance, please open a ticket in our [Assistance](https://discord.com/channels/1555272140029173800/1559677196094808206) channel."
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 1,
+          "components": [
+            {
+              "type": 2,
+              "style": 5,
+              "label": "Roblox ToS",
+              "url": "https://en.help.roblox.com/hc/en-us/articles/115004647846-Roblox-Terms-of-Use"
+            },
+            {
+              "type": 2,
+              "style": 5,
+              "label": "Discord ToS",
+              "url": "https://discord.com/terms"
+            }
+          ]
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}

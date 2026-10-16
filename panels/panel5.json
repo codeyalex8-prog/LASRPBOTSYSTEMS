@@ -1,0 +1,65 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/10b7d090190e33aab5dead1b77a60e23.png"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## CAD Information\n\nWelcome to the **Los Angeles State Roleplay CAD Information** section.\n\nOur Computer-Aided Dispatch (CAD) system is used to manage roleplay calls, track units, and maintain organised and realistic emergency services operations.\n\nPlease ensure all information entered into the CAD is accurate and kept up to date. All members using the system are expected to follow LASRP procedures and use the CAD appropriately during roleplay sessions.\n\nIf you experience any issues accessing or using the CAD system, please contact the LASRP staff team through **Assistance**."
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 1,
+          "components": [
+            {
+              "type": 2,
+              "style": 5,
+              "label": "AnchorCAD",
+              "url": "https://anchr.gg/select-department?server=776fde3d-d394-4da2-8633-80f319684edd"
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}

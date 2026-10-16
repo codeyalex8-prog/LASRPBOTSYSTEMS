@@ -1,0 +1,49 @@
+{
+  "flags": 32768,
+  "components": [
+    {
+      "type": 17,
+      "components": [
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/cce8e8c76863172f2d08876b7492be08.png"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 10,
+          "content": "## Session Starting\n\n<@&1555281818935103568> <@&1555281551028125836>\n\nA session is now starting in **Los Angeles State Roleplay**. All members wishing to participate should begin preparing and ensure they are ready to join.\n\nPlease follow all server rules, listen to staff instructions, and maintain a high standard of roleplay throughout the session.\n\nWe look forward to seeing you in the session!"
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        },
+        {
+          "type": 12,
+          "items": [
+            {
+              "media": {
+                "url": "https://discord-webhook.com/uploads/e51d8ccdc4c282b0d3503b88e6c11c1a.webp"
+              }
+            }
+          ]
+        },
+        {
+          "type": 14,
+          "spacing": 1,
+          "divider": true
+        }
+      ]
+    }
+  ]
+}
