@@ -1,4 +1,5 @@
-
+const fs = require('fs');
+const path = require('path');
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -15,10 +16,62 @@ const ROLE_ACCESS = {
   gban: ['1555279476949258320'],
   ipban: ['1555279476949258320'],
   softban: ['1555279476949258320'],
+  // who can look up mod logs
+  modlogs: ['1555283780447641620', '1555279476949258320'],
 };
 
 const COOLDOWN_MS = 60_000;
 const cooldowns = new Map();
+
+/* ------------------------------------------------------------------ */
+/*  Saved moderation cases (used by /modlogs and -modlogs)             */
+/* ------------------------------------------------------------------ */
+const DATA_FILE = path.join(__dirname, '..', 'data', 'modlogs.json');
+
+const CASE_LABELS = {
+  warn: 'Warn',
+  mute: 'Mute',
+  kick: 'Kick',
+  ban: 'Ban',
+  softban: 'Softban',
+  gban: 'Global Ban',
+};
+
+function loadLogs() {
+  try {
+    return JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+  } catch {
+    return { nextId: 1, cases: [] };
+  }
+}
+
+function saveLogs(data) {
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
+}
+
+function addCase({ userId, userTag, type, moderatorId, reason, duration }) {
+  const data = loadLogs();
+  const entry = {
+    id: data.nextId++,
+    userId,
+    userTag,
+    type,
+    moderatorId,
+    reason,
+    duration: duration || null,
+    timestamp: Date.now(),
+  };
+  data.cases.push(entry);
+  saveLogs(data);
+  return entry;
+}
+
+function getCases(userId) {
+  return loadLogs()
+    .cases.filter((c) => c.userId === userId)
+    .sort((a, b) => b.timestamp - a.timestamp);
+}
 
 function parseDuration(input) {
   const match = /^(\d+)(s|m|h|d)$/i.exec(input || '');
@@ -204,6 +257,7 @@ async function performCommand({
   const reason = getReason(reasonInput);
   let actionLabel = commandName;
   let extra = '';
+  let durationText = null;
 
   try {
     if (['mute', 'kick', 'softban'].includes(commandName) && !targetMember) {
@@ -228,7 +282,8 @@ async function performCommand({
       }
 
       await targetMember.timeout(duration, reason);
-      extra = `**Duration:** ${formatDuration(duration)}`;
+      durationText = formatDuration(duration);
+      extra = `**Duration:** ${durationText}`;
       actionLabel = 'Mute';
     } else if (commandName === 'warn') {
       await user.send(
@@ -272,6 +327,21 @@ async function performCommand({
       actionLabel = 'Global Ban';
     }
 
+    // save the case so /modlogs and -modlogs can show it later
+    try {
+      const saved = addCase({
+        userId: user.id,
+        userTag: user.tag || user.username,
+        type: commandName,
+        moderatorId: moderator.id,
+        reason,
+        duration: durationText,
+      });
+      extra = (extra ? `${extra}\n` : '') + `**Case:** #${saved.id}`;
+    } catch (saveError) {
+      console.error('[MODLOGS] Could not save the case:', saveError);
+    }
+
     const embed = createLogEmbed(actionLabel, moderator, user, reason, extra);
     await sendLog(client, embed);
 
@@ -310,6 +380,95 @@ async function performCommand({
       await interaction.editReply(text).catch(() => {});
     }
   }
+}
+
+/* ------------------------------------------------------------------ */
+/*  /modlogs and -modlogs                                              */
+/* ------------------------------------------------------------------ */
+const MAX_CASES_SHOWN = 10;
+
+async function performModLogs({
+  client,
+  guild,
+  requester,
+  requesterMember,
+  targetInput,
+  interaction,
+  message,
+}) {
+  // errors: private for slash commands, plain message for - commands
+  const fail = (text) =>
+    interaction
+      ? interaction.reply({ content: text, ephemeral: true })
+      : message.channel.send(text);
+
+  if (!guild || !requesterMember) {
+    return fail('This command can only be used inside a server.');
+  }
+
+  if (!hasAccess(requesterMember, 'modlogs')) {
+    return fail('You do not have the required role to use this command.');
+  }
+
+  if (!targetInput) {
+    return fail('Please say whose logs you want, for example: `-modlogs @user`');
+  }
+
+  const user = await resolveUser(guild, targetInput);
+  if (!user) {
+    return fail('I could not find that user. Try a mention, username, or Discord ID.');
+  }
+
+  const cases = getCases(user.id);
+
+  // totals
+  const counts = { warn: 0, mute: 0, kick: 0, ban: 0 };
+  for (const c of cases) {
+    if (c.type === 'warn') counts.warn++;
+    else if (c.type === 'mute') counts.mute++;
+    else if (c.type === 'kick') counts.kick++;
+    else counts.ban++; // ban, softban, gban
+  }
+
+  const embed = new EmbedBuilder()
+    .setTitle(`Moderation Logs | ${user.tag || user.username}`)
+    .setThumbnail(user.displayAvatarURL())
+    .setTimestamp();
+
+  if (!cases.length) {
+    embed.setDescription(
+      `**User:** <@${user.id}> (\`${user.id}\`)\n\nNo moderation logs found for this user.`
+    );
+  } else {
+    const shown = cases.slice(0, MAX_CASES_SHOWN);
+
+    const lines = shown.map((c) => {
+      const when = `<t:${Math.floor(c.timestamp / 1000)}:d>`;
+      const reasonText = String(c.reason || 'No reason provided').slice(0, 200);
+      return (
+        `**#${c.id} • ${CASE_LABELS[c.type] || c.type}** — ${when} by <@${c.moderatorId}>\n` +
+        (c.duration ? `Duration: ${c.duration}\n` : '') +
+        `Reason: ${reasonText}`
+      );
+    });
+
+    embed.setDescription(
+      `**User:** <@${user.id}> (\`${user.id}\`)\n` +
+      `**Warns:** ${counts.warn} • **Mutes:** ${counts.mute} • **Kicks:** ${counts.kick} • **Bans:** ${counts.ban}\n\n` +
+      lines.join('\n\n')
+    );
+  }
+
+  embed.setFooter({
+    text: cases.length > MAX_CASES_SHOWN
+      ? `Showing the latest ${MAX_CASES_SHOWN} of ${cases.length} cases • Los Angeles State Roleplay`
+      : 'Los Angeles State Roleplay',
+  });
+
+  if (interaction) {
+    return interaction.reply({ embeds: [embed], ephemeral: true });
+  }
+  return message.channel.send({ embeds: [embed] });
 }
 
 function makeCommand(name, description, options = []) {
@@ -358,6 +517,25 @@ const reasonOption = () => (option) =>
     .setDescription('Reason for this action')
     .setRequired(false);
 
+const modlogsCommand = {
+  data: new SlashCommandBuilder()
+    .setName('modlogs')
+    .setDescription("View a user's warns, mutes, kicks and bans")
+    .setDMPermission(false)
+    .addStringOption(userOption()),
+
+  async execute(interaction) {
+    await performModLogs({
+      client: interaction.client,
+      guild: interaction.guild,
+      requester: interaction.user,
+      requesterMember: interaction.member,
+      targetInput: interaction.options.getString('user'),
+      interaction,
+    });
+  },
+};
+
 const commands = [
   makeCommand('mute', 'Timeout a member', [
     userOption(),
@@ -388,10 +566,24 @@ const commands = [
     userOption(),
     reasonOption(),
   ]),
+  modlogsCommand,
 ];
 
 async function executePrefix(message, commandName, args, client) {
   const targetInput = args[0];
+
+  // -modlogs @user
+  if (commandName === 'modlogs') {
+    return performModLogs({
+      client,
+      guild: message.guild,
+      requester: message.author,
+      requesterMember: message.member,
+      targetInput,
+      message,
+    });
+  }
+
   let durationInput;
   let reasonInput;
 
