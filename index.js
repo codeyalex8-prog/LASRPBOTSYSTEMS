@@ -14,6 +14,8 @@ const {
   ActionRowBuilder,
 } = require('discord.js');
 
+const { logTicket } = require('./src/utils/ticketLogs');
+
 process.on('unhandledRejection', (err) => console.error('Unhandled error:', err));
 
 let client; // created in buildClient() below
@@ -443,6 +445,9 @@ async function unclaimTicket(interaction) {
   });
 }
 
+// tickets that are in the middle of closing (stops double closes / double logs)
+const closingChannels = new Set();
+
 async function closeTicket(interaction) {
   const info = parseTopic(interaction.channel);
   if (!info) return ephemeral(interaction, '❌ This isn\'t a ticket channel.');
@@ -450,12 +455,40 @@ async function closeTicket(interaction) {
     return ephemeral(interaction, NO_PERMISSION);
   }
 
+  const channel = interaction.channel;
+  if (closingChannels.has(channel.id)) {
+    return ephemeral(interaction, '❌ This ticket is already closing.');
+  }
+  closingChannels.add(channel.id);
+
   await interaction.reply({
     content: `${closingEmoji()} This ticket will close in **5 seconds**.`,
   });
+
+  // save the transcript + log BEFORE the channel is deleted
+  const startedAt = Date.now();
+  try {
+    await logTicket({
+      client,
+      channel,
+      typeLabel: TICKET_TYPES[info.type].label,
+      openerId: info.userId,
+      closedBy: interaction.user,
+    });
+  } catch (err) {
+    console.error('[TICKET LOG ERROR]', err);
+    closingChannels.delete(channel.id);
+    return channel
+      .send(
+        '❌ I couldn\'t save the transcript, so this ticket has **not** been closed. Check that I can view, send messages and attach files in the ticket log channel, then try closing again.'
+      )
+      .catch(() => {});
+  }
+
+  const wait = Math.max(0, 5000 - (Date.now() - startedAt));
   setTimeout(() => {
-    interaction.channel.delete().catch(console.error);
-  }, 5000);
+    channel.delete().catch(console.error);
+  }, wait);
 }
 
 async function holdTicket(interaction) {
