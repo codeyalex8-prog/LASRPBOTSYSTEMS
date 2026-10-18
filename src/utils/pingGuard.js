@@ -1,3 +1,5 @@
+const fs = require('fs');
+const path = require('path');
 const { MessageFlags } = require('discord.js');
 
 /* ------------------------------------------------------------------ */
@@ -27,6 +29,39 @@ const DEBUG = true;
 
 function log(...args) {
   if (DEBUG) console.log('[PING GUARD]', ...args);
+}
+
+/* ------------------------------------------------------------------ */
+/*  On / off switch (saved so it survives restarts)                    */
+/* ------------------------------------------------------------------ */
+const STATE_FILE = path.join(__dirname, '..', '..', 'data', 'pingguard.json');
+
+function loadEnabled() {
+  try {
+    return JSON.parse(fs.readFileSync(STATE_FILE, 'utf8')).enabled !== false;
+  } catch {
+    return true; // on by default
+  }
+}
+
+let enabled = loadEnabled();
+
+function isEnabled() {
+  return enabled;
+}
+
+function setEnabled(value) {
+  enabled = Boolean(value);
+
+  fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+  fs.writeFileSync(STATE_FILE, JSON.stringify({ enabled }, null, 2));
+
+  // switching it off clears anyone who was in the middle of replying
+  if (!enabled) {
+    pending.clear();
+    waiting.clear();
+    recentlyHandled.clear();
+  }
 }
 
 /* ------------------------------------------------------------------ */
@@ -114,6 +149,9 @@ async function handlePingGuard(message, client) {
     }
     return;
   }
+
+  // switched off with /pingguard off
+  if (!enabled) return;
 
   if (!announcedStartup) {
     announcedStartup = true;
@@ -274,4 +312,4 @@ async function handlePingGuard(message, client) {
   waiting.set(message.author.id, { botMessageId: botMessage.id, createdAt: Date.now() });
 }
 
-module.exports = { handlePingGuard };
+module.exports = { handlePingGuard, isEnabled, setEnabled, OWNER_ID };
