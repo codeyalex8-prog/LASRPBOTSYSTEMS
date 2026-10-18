@@ -4,8 +4,8 @@ const { MessageFlags } = require('discord.js');
 /*  SETTINGS                                                           */
 /* ------------------------------------------------------------------ */
 
-// YOUR Discord user ID (Settings → Advanced → Developer Mode, then right-click yourself → Copy User ID)
-const OWNER_ID = 'PUT_YOUR_USER_ID_HERE';
+// YOUR Discord user ID
+const OWNER_ID = '1444276604938489886';
 
 // The name the bot uses when talking about you
 const OWNER_NAME = 'Frosty';
@@ -22,12 +22,21 @@ const REPING_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes
 // Messages starting with this are bot commands, so they never count as pings
 const COMMAND_PREFIX = '-';
 
+// Prints the reason to the terminal whenever a ping is skipped (set to false once it works)
+const DEBUG = true;
+
+function log(...args) {
+  if (DEBUG) console.log('[PING GUARD]', ...args);
+}
+
 /* ------------------------------------------------------------------ */
 /*  Memory (resets if the bot restarts)                                */
 /* ------------------------------------------------------------------ */
 const pending = new Map(); // bot message id -> { userId, pingMessage, createdAt }
 const waiting = new Map(); // user id -> { botMessageId, createdAt }
 const recentlyHandled = new Map(); // user id -> time their message was passed on
+
+let announcedStartup = false;
 
 function cleanUp() {
   const now = Date.now();
@@ -96,9 +105,31 @@ async function sendSummaryDm(client, request, replyMessage) {
 /* ------------------------------------------------------------------ */
 async function handlePingGuard(message, client) {
   // not set up yet
-  if (!/^\d+$/.test(OWNER_ID)) return;
+  if (!/^\d+$/.test(OWNER_ID)) {
+    if (!announcedStartup) {
+      announcedStartup = true;
+      console.log(
+        '[PING GUARD] OFF - OWNER_ID in src/utils/pingGuard.js is still the placeholder. Put your user ID in.'
+      );
+    }
+    return;
+  }
 
-  if (message.author.bot || message.author.id === OWNER_ID) return;
+  if (!announcedStartup) {
+    announcedStartup = true;
+    console.log(`[PING GUARD] ON - watching for pings of user ID ${OWNER_ID}`);
+  }
+
+  const mentionsOwner = message.mentions.users.has(OWNER_ID);
+
+  if (message.author.bot) return;
+
+  if (message.author.id === OWNER_ID) {
+    if (mentionsOwner) {
+      log('Skipped: that message was sent from the owner account. Ping from a DIFFERENT account to test.');
+    }
+    return;
+  }
 
   cleanUp();
 
@@ -108,7 +139,10 @@ async function handlePingGuard(message, client) {
     const request = pending.get(referenceId);
 
     // only the person who pinged can answer it
-    if (request.userId !== message.author.id) return;
+    if (request.userId !== message.author.id) {
+      log('Skipped: a different person replied to the bot\'s message.');
+      return;
+    }
 
     pending.delete(referenceId);
     waiting.delete(message.author.id);
@@ -139,6 +173,7 @@ async function handlePingGuard(message, client) {
     // DM the owner
     try {
       await sendSummaryDm(client, request, message);
+      log('Sent you the DM.');
     } catch (err) {
       console.error(
         '[PING GUARD] Could not DM you. Check your Discord privacy settings allow DMs from server members:',
@@ -149,13 +184,27 @@ async function handlePingGuard(message, client) {
   }
 
   /* ---- 2. Did this message ping the owner? ---- */
-  if (message.content.startsWith(COMMAND_PREFIX)) return;
+  if (!mentionsOwner) return; // normal message, nothing to say
+
+  if (message.content.startsWith(COMMAND_PREFIX)) {
+    log(`Skipped: message starts with "${COMMAND_PREFIX}" so it's treated as a bot command.`);
+    return;
+  }
 
   // a real @mention in the text (not just a reply that pings)
+  if (!message.content) {
+    log(
+      'Skipped: the message text is EMPTY, so Message Content Intent is probably OFF. Turn it on in the Developer Portal → Bot → Privileged Gateway Intents, then restart.'
+    );
+    return;
+  }
+
   const pinged =
-    message.mentions.users.has(OWNER_ID) &&
-    (message.content.includes(`<@${OWNER_ID}>`) || message.content.includes(`<@!${OWNER_ID}>`));
-  if (!pinged) return;
+    message.content.includes(`<@${OWNER_ID}>`) || message.content.includes(`<@!${OWNER_ID}>`);
+  if (!pinged) {
+    log('Skipped: you were only pinged through a reply, not a typed @mention.');
+    return;
+  }
 
   // people allowed to ping freely
   if (
@@ -163,11 +212,15 @@ async function handlePingGuard(message, client) {
     message.member &&
     message.member.roles.cache.some((role) => EXEMPT_ROLE_IDS.includes(role.id))
   ) {
+    log('Skipped: that person has an exempt role.');
     return;
   }
 
   // already told them to explain - just wait for their reply
-  if (waiting.has(message.author.id)) return;
+  if (waiting.has(message.author.id)) {
+    log('Skipped: the bot already asked this person to explain, waiting for their reply.');
+    return;
+  }
 
   // they already sent their message and are pinging again
   if (recentlyHandled.has(message.author.id)) {
@@ -183,24 +236,35 @@ async function handlePingGuard(message, client) {
   }
 
   /* ---- 3. Ask them what they need ---- */
-  const botMessage = await message.reply({
-    components: [
-      {
-        type: 17,
-        components: [
-          {
-            type: 10,
-            content:
-              `## ⏳ ${OWNER_NAME} is busy right now\n` +
-              `Hey <@${message.author.id}>, ${OWNER_NAME} can't get back to you at the moment.\n\n` +
-              `**Please summarise what you need by replying to this message.** I'll pass it straight on to him, so there's no need to ping again.`,
-          },
-        ],
-      },
-    ],
-    flags: MessageFlags.IsComponentsV2,
-    allowedMentions: { parse: [], repliedUser: true },
-  });
+  log(`Ping detected from ${message.author.username} - replying.`);
+
+  let botMessage;
+  try {
+    botMessage = await message.reply({
+      components: [
+        {
+          type: 17,
+          components: [
+            {
+              type: 10,
+              content:
+                `## ⏳ ${OWNER_NAME} is busy right now\n` +
+                `Hey <@${message.author.id}>, ${OWNER_NAME} can't get back to you at the moment.\n\n` +
+                `**Please summarise what you need by replying to this message.** I'll pass it straight on to him, so there's no need to ping again.`,
+            },
+          ],
+        },
+      ],
+      flags: MessageFlags.IsComponentsV2,
+      allowedMentions: { parse: [], repliedUser: true },
+    });
+  } catch (err) {
+    console.error(
+      '[PING GUARD] Could not reply in that channel. Check the bot can view the channel, send messages and read message history there:',
+      err.message
+    );
+    return;
+  }
 
   pending.set(botMessage.id, {
     userId: message.author.id,
