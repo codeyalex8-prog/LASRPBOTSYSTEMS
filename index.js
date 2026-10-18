@@ -15,6 +15,7 @@ const {
 } = require('discord.js');
 
 const { logTicket } = require('./src/utils/ticketLogs');
+const { handlePingGuard } = require('./src/utils/pingGuard');
 
 process.on('unhandledRejection', (err) => console.error('Unhandled error:', err));
 
@@ -52,7 +53,7 @@ const CLAIM_ID = 'btn_1792097545132_xx7k';
 const CLOSE_ID = 'btn_1792097546591_44l5';
 
 // animated emoji shown when a ticket is closing
-const CLOSING_EMOJI_ID = '1490848277313224774';
+const CLOSING_EMOJI_ID = '1561271251698188329';
 function closingEmoji() {
   const emoji = client.emojis.cache.get(CLOSING_EMOJI_ID);
   return emoji ? emoji.toString() : '⏳'; // falls back if the bot can't see the emoji
@@ -682,6 +683,17 @@ function buildClient(withMessageContent) {
       }
     });
   }
+
+  // Ping guard: answers people who ping the owner and passes their message on
+  client.on('messageCreate', async (message) => {
+    if (message.author.bot || !message.guild) return;
+
+    try {
+      await handlePingGuard(message, client);
+    } catch (error) {
+      console.error('[PING GUARD ERROR]', error);
+    }
+  });
 
   // Interactions: slash commands, ticket forms, dropdowns and buttons
   client.on('interactionCreate', async (interaction) => {
